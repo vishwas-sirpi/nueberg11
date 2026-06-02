@@ -3,12 +3,12 @@ import { useNavigate, useParams } from "react-router";
 import { Sidebar } from "../components/sidebar";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { useTheme } from "../context/ThemeContext";
 import {
   ArrowLeft,
   FileText,
   Copy,
   Check,
-  Download,
   Pencil,
   Save,
 } from "lucide-react";
@@ -17,7 +17,9 @@ export function ResultPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const { theme } = useTheme();
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [copiedAll, setCopiedAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
@@ -41,10 +43,18 @@ export function ResultPage() {
   const isPdf = fileMeta.name.toLowerCase().endsWith(".pdf");
 
   const [extractedData, setExtractedData] = useState<Record<string, string>>({
-    name: "Darshan Kumar",
-    email: "darshan@example.com",
-    disease: "Type 2 Diabetes",
-    dob: "12 March 1995",
+    "Patient Name": "Darshan Kumar",
+    "Gender": "Male",
+    "Date of Birth": "12 March 1995",
+    "Blood Group": "O+",
+    "Contact Number": "+91 98765 43210",
+    "Email Address": "darshan@example.com",
+    "Date of Examination": "29 May 2026",
+    "Referred Doctor": "Dr. Aditi Sharma, MD",
+    "Test Performed": "HbA1c & Fasting Blood Sugar",
+    "HbA1c Value": "7.2% (High)",
+    "Fasting Blood Sugar": "142 mg/dL",
+    "Primary Diagnosis": "Type 2 Diabetes Mellitus",
   });
 
   const handleCopyField = (field: string, value: string) => {
@@ -55,15 +65,19 @@ export function ResultPage() {
     }, 2000);
   };
 
-  const handleExportJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(extractedData, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `patient_data_${id || "extract"}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+  const handleCopyAllData = () => {
+    const textToCopy = Object.entries(extractedData)
+      .map(([key, val]) => `${key}: ${val}`)
+      .join("\n");
+    
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedAll(true);
+    setTimeout(() => {
+      setCopiedAll(false);
+    }, 2000);
   };
+
+  // Export/Copy functions are now handled inline via handleCopyAllData
 
   const handleSaveToDatabase = async () => {
     try {
@@ -88,74 +102,89 @@ export function ResultPage() {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#F8FAFC" }}>
+    <div 
+      className="flex min-h-screen transition-colors duration-300" 
+      style={{ background: theme === 'dark' ? '#0F172A' : '#F8FAFC' }}
+    >
       <Sidebar />
 
       <div className="flex-1 lg:ml-64 p-4 md:p-8 flex flex-col h-screen overflow-y-auto">
-        {/* Header */}
-        <div className="mb-6">
+        {/* Back Navigation Bar */}
+        <div className="mb-4">
           <Button
             onClick={() => navigate("/dashboard")}
             variant="ghost"
-            className="mb-3 px-0 text-slate-500 hover:text-slate-900 hover:bg-transparent transition-colors"
+            className="px-0 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-transparent transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} className="mr-2" />
             Back to Dashboard
           </Button>
-
-          <h1 className="tracking-tight" style={{ fontSize: "28px", fontWeight: "700", color: "#0F172A" }}>
-            Extracted Results
-          </h1>
-        </div>
-
-        {/* File Quick Info Card */}
-        <div
-          className="bg-white rounded-2xl p-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border border-slate-200/60"
-          style={{ boxShadow: "0 4px 20px -2px rgba(15, 23, 42, 0.04)" }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-600">
-              <FileText size={22} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#0F172A" }}>
-                {fileMeta.name}
-              </h3>
-              <p style={{ fontSize: "13px", color: "#64748B" }}>
-                Uploaded {fileMeta.uploadedAt} · {fileMeta.size}
-              </p>
-            </div>
-          </div>
-          <Badge
-            className="rounded-md px-2.5 py-1 font-medium border border-emerald-200/60 shadow-none pointer-events-none self-start md:self-auto"
-            style={{ background: "#F0FDF4", color: "#166534", fontSize: "12px" }}
-          >
-            Extraction Complete
-          </Badge>
         </div>
 
         {/* Two Column Workspace Split */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[500px] items-stretch pb-6">
           
-          {/* LEFT PANEL: Interactive File Document Preview */}
-          <div className="lg:col-span-6 xl:col-span-7 flex flex-col">
+          {/* LEFT PANEL: Document Metadata & Preview Panel (40% width) */}
+          <div className="lg:col-span-5 flex flex-col">
             <div 
-              className="bg-white rounded-3xl p-4 border border-slate-200/60 flex-1 flex flex-col overflow-hidden min-h-[450px] lg:min-h-0"
-              style={{ boxShadow: "0 10px 30px rgba(0, 0, 0, 0.03)" }}
+              className="rounded-3xl p-4 border flex-1 flex flex-col overflow-hidden min-h-[450px] lg:min-h-0 transition-colors"
+              style={{ 
+                background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                borderColor: theme === 'dark' ? '#334155' : 'rgba(226, 232, 240, 0.6)',
+                boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.03)'
+              }}
             >
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase mb-3 block">
-                Original Document Preview
-              </span>
+              {/* Document Header in Place of Original Text */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b transition-colors" style={{ borderColor: theme === 'dark' ? '#334155' : '#F1F5F9' }}>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center border transition-all"
+                    style={{
+                      background: theme === 'dark' ? '#0F172A' : '#F8FAFC',
+                      borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                      color: theme === 'dark' ? '#94A3B8' : '#64748B'
+                    }}
+                  >
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h3 
+                      className="font-bold truncate max-w-[150px] transition-colors"
+                      style={{ fontSize: "14px", color: theme === 'dark' ? '#F1F5F9' : '#0F172A' }}
+                    >
+                      {fileMeta.name}
+                    </h3>
+                    <p style={{ fontSize: "11px", color: theme === 'dark' ? '#94A3B8' : '#64748B' }}>
+                      Uploaded {fileMeta.uploadedAt} · {fileMeta.size}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  className="rounded-md px-2.5 py-1 font-semibold border shadow-none pointer-events-none self-start sm:self-auto text-[10px]"
+                  style={{ 
+                    background: theme === 'dark' ? 'rgba(16, 185, 129, 0.1)' : '#F0FDF4', 
+                    color: theme === 'dark' ? '#10B981' : '#166534',
+                    borderColor: theme === 'dark' ? 'rgba(16, 185, 129, 0.2)' : '#BBF7D0' 
+                  }}
+                >
+                  Extraction Complete
+                </Badge>
+              </div>
               
-              <div className="bg-slate-100 rounded-2xl flex-1 overflow-hidden relative flex items-center justify-center border border-slate-200/50">
+              {/* Document Preview Embed */}
+              <div 
+                className="rounded-2xl flex-1 overflow-hidden relative flex items-center justify-center border transition-colors"
+                style={{ 
+                  background: theme === 'dark' ? '#0F172A' : '#F1F5F9',
+                  borderColor: theme === 'dark' ? '#334155' : '#E2E8F0'
+                }}
+              >
                 {isPdf ? (
-                  /* Interactive PDF Embedded Viewer */
                   <object
                     data={`${fileMeta.url}#toolbar=1&navpanes=0&scrollbar=1`}
                     type="application/pdf"
                     className="w-full h-full rounded-2xl"
                   >
-                    {/* Fallback frame if object tag isn't supported completely */}
                     <iframe
                       src={`${fileMeta.url}#toolbar=1`}
                       className="w-full h-full border-none rounded-2xl"
@@ -163,7 +192,6 @@ export function ResultPage() {
                     />
                   </object>
                 ) : (
-                  /* High Quality Zoomable/Fluid Image Component Preview */
                   <img
                     src={fileMeta.url}
                     alt="Original Uploaded Source"
@@ -174,29 +202,40 @@ export function ResultPage() {
             </div>
           </div>
 
-          {/* RIGHT PANEL: Clean Extracted Fields Form Dashboard */}
-          <div className="lg:col-span-6 xl:col-span-5 flex flex-col">
+          {/* RIGHT PANEL: Clean Extracted Fields Form (60% width) */}
+          <div className="lg:col-span-7 flex flex-col">
             <div
-              className="bg-white rounded-3xl p-6 border border-slate-200/60 flex flex-col h-full"
-              style={{ boxShadow: "0 10px 30px rgba(0, 0, 0, 0.03)" }}
+              className="rounded-3xl p-6 border flex flex-col h-full transition-colors"
+              style={{ 
+                background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                borderColor: theme === 'dark' ? '#334155' : 'rgba(226, 232, 240, 0.6)',
+                boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.03)'
+              }}
             >
-              <h2 className="mb-6 tracking-tight" style={{ fontSize: "20px", fontWeight: "600", color: "#0F172A" }}>
+              <h2 
+                className="mb-6 tracking-tight transition-colors" 
+                style={{ fontSize: "20px", fontWeight: "600", color: theme === 'dark' ? '#F1F5F9' : '#0F172A' }}
+              >
                 Extracted Fields
               </h2>
 
-              {/* Form Fields Stack (Scrollable if data overflows height limits) */}
+              {/* Form Fields Stack */}
               <div className="space-y-4 mb-6 flex-1 overflow-y-auto pr-1">
                 {Object.entries(extractedData).map(([key, value]) => (
                   <div
                     key={key}
-                    className="p-4 rounded-xl flex items-center gap-4 bg-slate-50/50 border border-slate-200/60 focus-within:border-slate-400 transition-colors"
+                    className="p-4 rounded-xl flex items-center gap-4 border transition-all"
+                    style={{
+                      background: theme === 'dark' ? '#0F172A' : '#F8FAFC',
+                      borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                    }}
                   >
                     <div className="flex-1">
                       <div
                         style={{
-                          fontSize: "12px",
+                          fontSize: "10px",
                           fontWeight: "600",
-                          color: "#94A3B8",
+                          color: theme === 'dark' ? '#94A3B8' : '#94A3B8',
                           marginBottom: "4px",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
@@ -211,8 +250,8 @@ export function ResultPage() {
                         onChange={(e) => handleFieldChange(key, e.target.value)}
                         className={`w-full outline-none bg-transparent transition-all border-b ${
                           editingFields[key]
-                            ? "border-slate-300 dark:border-slate-600 pb-0.5 text-slate-900"
-                            : "border-transparent text-slate-700 pointer-events-none"
+                            ? "border-slate-300 dark:border-slate-600 pb-0.5 text-slate-900 dark:text-white"
+                            : "border-transparent text-slate-700 dark:text-slate-300 pointer-events-none"
                         }`}
                         style={{
                           fontSize: "14px",
@@ -227,16 +266,21 @@ export function ResultPage() {
                         onClick={() => handleCopyField(key, value)}
                         className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer"
                         style={{
-                          background: copiedField === key ? "#F0FDF4" : "#FFFFFF",
-                          borderColor: copiedField === key ? "#BBF7D0" : "#E2E8F0",
+                          background: theme === 'dark'
+                            ? (copiedField === key ? 'rgba(16, 185, 129, 0.15)' : '#1E293B')
+                            : (copiedField === key ? "#F0FDF4" : "#FFFFFF"),
+                          borderColor: theme === 'dark'
+                            ? (copiedField === key ? '#10B981' : '#334155')
+                            : (copiedField === key ? "#BBF7D0" : "#E2E8F0"),
+                          color: theme === 'dark' ? '#F1F5F9' : '#0F172A'
                         }}
                         title="Copy value"
                         aria-label="Copy value"
                       >
                         {copiedField === key ? (
-                          <Check size={14} color="#166534" />
+                          <Check size={14} className="text-emerald-500" />
                         ) : (
-                          <Copy size={14} className="text-slate-400 hover:text-slate-600" />
+                          <Copy size={14} className="text-slate-400 hover:text-slate-300" />
                         )}
                       </button>
 
@@ -245,16 +289,21 @@ export function ResultPage() {
                         onClick={() => handleToggleEdit(key)}
                         className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer"
                         style={{
-                          background: editingFields[key] ? "#EFF6FF" : "#FFFFFF",
-                          borderColor: editingFields[key] ? "#BFDBFE" : "#E2E8F0",
+                          background: theme === 'dark'
+                            ? (editingFields[key] ? 'rgba(59, 130, 246, 0.15)' : '#1E293B')
+                            : (editingFields[key] ? "#EFF6FF" : "#FFFFFF"),
+                          borderColor: theme === 'dark'
+                            ? (editingFields[key] ? '#3B82F6' : '#334155')
+                            : (editingFields[key] ? "#BFDBFE" : "#E2E8F0"),
+                          color: theme === 'dark' ? '#F1F5F9' : '#0F172A'
                         }}
                         title={editingFields[key] ? "Save changes" : "Edit field"}
                         aria-label={editingFields[key] ? "Save changes" : "Edit field"}
                       >
                         {editingFields[key] ? (
-                          <Save size={14} className="text-blue-600" />
+                          <Save size={14} className="text-blue-500" />
                         ) : (
-                          <Pencil size={14} className="text-slate-400 hover:text-slate-600" />
+                          <Pencil size={14} className="text-slate-400 hover:text-slate-300" />
                         )}
                       </button>
                     </div>
@@ -263,20 +312,34 @@ export function ResultPage() {
               </div>
 
               {/* Action Footer Triggers */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
                 <Button
-                  onClick={handleExportJson}
+                  onClick={handleCopyAllData}
                   variant="outline"
-                  className="h-11 px-5 rounded-xl text-slate-700 font-medium border-slate-200 hover:bg-slate-50 w-full sm:w-auto transition-colors"
+                  className="h-11 px-5 rounded-xl font-medium border transition-colors cursor-pointer w-full sm:w-auto"
+                  style={{
+                    background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                    borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                    color: theme === 'dark' ? '#F1F5F9' : '#64748B'
+                  }}
                 >
-                  <Download size={16} className="mr-2 text-slate-500" />
-                  Copy all data 
+                  {copiedAll ? (
+                    <>
+                      <Check size={16} className="mr-2 text-emerald-500" />
+                      Copied Data!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} className="mr-2" />
+                      Copy all data
+                    </>
+                  )}
                 </Button>
 
                 <Button
                   onClick={handleSaveToDatabase}
                   disabled={saving}
-                  className="h-11 px-6 rounded-xl text-white font-medium shadow-sm w-full sm:w-auto transition-all hover:opacity-95"
+                  className="h-11 px-6 rounded-xl text-white font-medium shadow-sm w-full sm:w-auto transition-all hover:opacity-95 cursor-pointer"
                   style={{
                     background: saved ? "#15803D" : "#10B981",
                   }}

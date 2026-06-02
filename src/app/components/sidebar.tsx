@@ -124,40 +124,45 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </div>
 
-          {/* Collapsible Action Row */}
+          {/* Collapsible Action List */}
           {showActions && (
             <div 
-              className="flex items-center justify-between pt-2 border-t border-white/10 transition-all"
+              className="flex flex-col gap-1 pt-2 border-t border-white/10 transition-all"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors w-full text-left cursor-pointer"
                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
                 aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <span className="text-xs font-semibold">
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </span>
               </button>
 
               {/* Settings */}
               <button
                 onClick={() => navigate("/settings")}
-                className="p-2 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/85 hover:text-white hover:bg-white/10 transition-colors w-full text-left cursor-pointer"
                 title="Settings"
                 aria-label="Settings"
               >
                 <Settings size={18} />
+                <span className="text-xs font-semibold">Settings</span>
               </button>
 
               {/* Logout */}
               <button
                 onClick={() => navigate("/")}
-                className="p-2 rounded-lg text-white/85 hover:text-red-300 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-white/85 hover:text-red-300 hover:bg-white/10 transition-colors w-full text-left cursor-pointer"
                 title="Logout"
                 aria-label="Logout"
               >
                 <LogOut size={18} />
+                <span className="text-xs font-semibold">Logout</span>
               </button>
             </div>
           )}

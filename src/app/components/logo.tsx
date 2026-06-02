@@ -17,6 +17,7 @@ export function AppLogo() {
           style={{
             fontSize: "18px",
             fontWeight: "700",
+            color: "white",
           }}
         >
           Neuberg

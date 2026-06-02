@@ -68,27 +68,7 @@ export function DashboardPage() {
       icon: Files,
       iconColor: "#065F46",
     },
-    {
-      label: "Patients OCR'ed",
-      value: "842",
-      subtext: "99.4% accuracy rate",
-      icon: Users,
-      iconColor: "#10B981",
-    },
-    {
-      label: "Doctor Reports OCR'ed",
-      value: "406",
-      subtext: "32 parsed today",
-      icon: Stethoscope,
-      iconColor: "#4F46E5",
-    },
-    {
-      label: "Pending File Count",
-      value: "12",
-      subtext: "Awaiting ingestion",
-      icon: Clock,
-      iconColor: "#64748B",
-    },
+
     {
       label: "Processing File Count",
       value: "5",
@@ -226,7 +206,7 @@ export function DashboardPage() {
             className="text-3xl font-bold tracking-tight transition-colors"
             style={{ color: theme === 'dark' ? '#F1F5F9' : '#0F172A' }}
           >
-            Workspace Hub
+            Dashboard
           </h1>
           <p
             className="mt-1.5 text-sm transition-colors"
