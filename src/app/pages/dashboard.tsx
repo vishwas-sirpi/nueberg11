@@ -4,6 +4,7 @@ import { Sidebar } from "../components/sidebar";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { useTheme } from "../context/ThemeContext";
+import { toast } from "sonner";
 import {
   Upload,
   FileText,
@@ -17,6 +18,7 @@ import {
   CheckCircle,
   X,
   UploadCloud,
+  Trash2,
 } from "lucide-react";
 
 export function DashboardPage() {
@@ -95,6 +97,7 @@ export function DashboardPage() {
   const simulateUpload = (file: File) => {
     setUploadingFile(file);
     setUploadProgress(0);
+    toast.loading(`Uploading "${file.name}"...`, { id: "upload-toast" });
     
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
@@ -112,6 +115,7 @@ export function DashboardPage() {
           };
           
           setRecentUploads((prevList) => [newUpload, ...prevList]);
+          toast.success(`"${file.name}" uploaded and added to processing pipeline!`, { id: "upload-toast" });
           
           // Close modal and reset states after a brief delay
           setTimeout(() => {
@@ -125,6 +129,11 @@ export function DashboardPage() {
         return prev + 10;
       });
     }, 120);
+  };
+
+  const handleDeleteUpload = (id: string, fileName: string) => {
+    setRecentUploads((prev) => prev.filter((item) => item.id !== id));
+    toast.warning(`Removed "${fileName}" from pipeline activities`);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -453,19 +462,30 @@ export function DashboardPage() {
                       </Badge>
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg h-8 text-xs transition-all font-medium"
-                        style={{
-                          background: theme === 'dark' ? '#10B981' : '#FFFFFF',
-                          borderColor: theme === 'dark' ? '#10B981' : '#065F46',
-                          color: theme === 'dark' ? '#FFFFFF' : '#065F46',
-                        }}
-                        onClick={() => navigate(`/result/${upload.id}`)}
-                      >
-                        View Output
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg h-8 text-xs transition-all font-medium cursor-pointer"
+                          style={{
+                            background: theme === 'dark' ? '#10B981' : '#FFFFFF',
+                            borderColor: theme === 'dark' ? '#10B981' : '#065F46',
+                            color: theme === 'dark' ? '#FFFFFF' : '#065F46',
+                          }}
+                          onClick={() => navigate(`/result/${upload.id}`)}
+                        >
+                          View Output
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                          onClick={() => handleDeleteUpload(upload.id, upload.fileName)}
+                          title="Remove Activity"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -525,19 +545,30 @@ export function DashboardPage() {
                   >
                     {upload.date}
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 rounded-lg text-xs transition-all font-medium"
-                    style={{
-                      background: theme === 'dark' ? '#10B981' : '#FFFFFF',
-                      borderColor: theme === 'dark' ? '#10B981' : '#065F46',
-                      color: theme === 'dark' ? '#FFFFFF' : '#065F46',
-                    }}
-                    onClick={() => navigate(`/result/${upload.id}`)}
-                  >
-                    View Output
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg text-xs transition-all font-medium cursor-pointer"
+                      style={{
+                        background: theme === 'dark' ? '#10B981' : '#FFFFFF',
+                        borderColor: theme === 'dark' ? '#10B981' : '#065F46',
+                        color: theme === 'dark' ? '#FFFFFF' : '#065F46',
+                      }}
+                      onClick={() => navigate(`/result/${upload.id}`)}
+                    >
+                      View Output
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                      onClick={() => handleDeleteUpload(upload.id, upload.fileName)}
+                      title="Remove Activity"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

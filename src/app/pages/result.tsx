@@ -4,6 +4,7 @@ import { Sidebar } from "../components/sidebar";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { useTheme } from "../context/ThemeContext";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   FileText,
@@ -11,6 +12,8 @@ import {
   Check,
   Pencil,
   Save,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 export function ResultPage() {
@@ -24,11 +27,23 @@ export function ResultPage() {
   const [saved, setSaved] = useState(false);
   const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
 
+  // Add field states
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
+
   const handleToggleEdit = (key: string) => {
+    const isCurrentlyEditing = !!editingFields[key];
     setEditingFields((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
+    
+    if (isCurrentlyEditing) {
+      toast.success(`Saved "${key}" field successfully`);
+    } else {
+      toast.info(`Editing "${key}" field`);
+    }
   };
 
   // Simulated file metadata (In production, fetch this via id)
@@ -60,6 +75,7 @@ export function ResultPage() {
   const handleCopyField = (field: string, value: string) => {
     navigator.clipboard.writeText(value);
     setCopiedField(field);
+    toast.success(`Copied "${field}" value to clipboard!`);
     setTimeout(() => {
       setCopiedField(null);
     }, 2000);
@@ -72,22 +88,23 @@ export function ResultPage() {
     
     navigator.clipboard.writeText(textToCopy);
     setCopiedAll(true);
+    toast.success("Copied all extracted fields to clipboard!");
     setTimeout(() => {
       setCopiedAll(false);
     }, 2000);
   };
-
-  // Export/Copy functions are now handled inline via handleCopyAllData
 
   const handleSaveToDatabase = async () => {
     try {
       setSaving(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setSaved(true);
+      toast.success("All record changes successfully synchronized and saved to database!");
       setTimeout(() => {
         setSaved(false);
       }, 2000);
     } catch (error) {
+      toast.error("Failed to save records to database");
       console.error(error);
     } finally {
       setSaving(false);
@@ -99,6 +116,36 @@ export function ResultPage() {
       ...prev,
       [key]: value,
     }));
+  };
+
+  const handleDeleteField = (key: string) => {
+    setExtractedData((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    toast.warning(`Field "${key}" removed successfully`);
+  };
+
+  const handleAddField = () => {
+    const key = newKey.trim();
+    const val = newValue.trim();
+    if (!key) {
+      toast.error("Field name cannot be empty");
+      return;
+    }
+    if (extractedData[key]) {
+      toast.error(`Field "${key}" already exists`);
+      return;
+    }
+    setExtractedData((prev) => ({
+      ...prev,
+      [key]: val,
+    }));
+    toast.success(`Field "${key}" added successfully`);
+    setNewKey("");
+    setNewValue("");
+    setIsAddingField(false);
   };
 
   return (
@@ -212,15 +259,157 @@ export function ResultPage() {
                 boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.03)'
               }}
             >
-              <h2 
-                className="mb-6 tracking-tight transition-colors" 
-                style={{ fontSize: "20px", fontWeight: "600", color: theme === 'dark' ? '#F1F5F9' : '#0F172A' }}
+              {/* Header with Title and Fixed Actions */}
+              <div 
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b mb-6 transition-colors"
+                style={{ borderColor: theme === 'dark' ? '#334155' : '#F1F5F9' }}
               >
-                Extracted Fields
-              </h2>
+                <h2 
+                  className="tracking-tight transition-colors" 
+                  style={{ fontSize: "20px", fontWeight: "600", color: theme === 'dark' ? '#F1F5F9' : '#0F172A' }}
+                >
+                  Extracted Fields
+                </h2>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    onClick={handleCopyAllData}
+                    variant="outline"
+                    className="h-10 px-4 rounded-xl font-medium border transition-colors cursor-pointer text-xs flex items-center justify-center flex-1 sm:flex-initial"
+                    style={{
+                      background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                      borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                      color: theme === 'dark' ? '#F1F5F9' : '#64748B'
+                    }}
+                  >
+                    {copiedAll ? (
+                      <>
+                        <Check size={14} className="mr-1.5 text-emerald-500" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} className="mr-1.5" />
+                        Copy all data
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleSaveToDatabase}
+                    disabled={saving}
+                    className="h-10 px-5 rounded-xl text-white text-xs font-medium shadow-sm transition-all hover:opacity-95 cursor-pointer flex items-center justify-center flex-1 sm:flex-initial"
+                    style={{
+                      background: saved ? "#15803D" : "#10B981",
+                    }}
+                  >
+                    {saving ? (
+                      "Syncing..."
+                    ) : saved ? (
+                      <>
+                        <Check size={14} className="mr-1.5" />
+                        Saved
+                      </>
+                    ) : (
+                      "Save To Database"
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Add Custom Field row */}
+              <div className="mb-4">
+                {isAddingField ? (
+                  <div
+                    className="p-4 rounded-xl border transition-all flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in duration-200"
+                    style={{
+                      background: theme === 'dark' ? '#0F172A' : '#F8FAFC',
+                      borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                    }}
+                  >
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label 
+                          className="text-[10px] font-semibold uppercase tracking-wider block mb-1"
+                          style={{ color: theme === 'dark' ? '#94A3B8' : '#64748B' }}
+                        >
+                          Field Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Heart Rate"
+                          value={newKey}
+                          onChange={(e) => setNewKey(e.target.value)}
+                          className="w-full h-9 px-3 rounded-lg border text-xs focus:outline-none transition-all"
+                          style={{
+                            background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                            borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                            color: theme === 'dark' ? '#F1F5F9' : '#0F172A'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label 
+                          className="text-[10px] font-semibold uppercase tracking-wider block mb-1"
+                          style={{ color: theme === 'dark' ? '#94A3B8' : '#64748B' }}
+                        >
+                          Field Value
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 72 bpm"
+                          value={newValue}
+                          onChange={(e) => setNewValue(e.target.value)}
+                          className="w-full h-9 px-3 rounded-lg border text-xs focus:outline-none transition-all"
+                          style={{
+                            background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                            borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                            color: theme === 'dark' ? '#F1F5F9' : '#0F172A'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center mt-3 sm:mt-0">
+                      <Button
+                        size="sm"
+                        onClick={handleAddField}
+                        className="h-9 px-3 text-white text-xs font-semibold cursor-pointer"
+                        style={{ background: "#10B981" }}
+                      >
+                        Add
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setIsAddingField(false);
+                          setNewKey("");
+                          setNewValue("");
+                        }}
+                        className="h-9 px-3 text-xs text-slate-500 dark:text-slate-400 hover:bg-transparent cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => setIsAddingField(true)}
+                    variant="outline"
+                    className="w-full h-10 border border-dashed rounded-xl text-xs font-semibold cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-slate-800/30 flex items-center justify-center"
+                    style={{
+                      borderColor: theme === 'dark' ? '#475569' : '#CBD5E1',
+                      color: theme === 'dark' ? '#CBD5E1' : '#64748B'
+                    }}
+                  >
+                    <Plus size={14} className="mr-1.5" />
+                    Add Custom Field
+                  </Button>
+                )}
+              </div>
 
               {/* Form Fields Stack */}
-              <div className="space-y-4 mb-6 flex-1 overflow-y-auto pr-1">
+              <div className="space-y-4 flex-1 overflow-y-auto pr-1">
                 {Object.entries(extractedData).map(([key, value]) => (
                   <div
                     key={key}
@@ -306,55 +495,24 @@ export function ResultPage() {
                           <Pencil size={14} className="text-slate-400 hover:text-slate-300" />
                         )}
                       </button>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={() => handleDeleteField(key)}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/30"
+                        style={{
+                          background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
+                          borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
+                          color: '#EF4444'
+                        }}
+                        title="Delete field"
+                        aria-label="Delete field"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Action Footer Triggers */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                <Button
-                  onClick={handleCopyAllData}
-                  variant="outline"
-                  className="h-11 px-5 rounded-xl font-medium border transition-colors cursor-pointer w-full sm:w-auto"
-                  style={{
-                    background: theme === 'dark' ? '#1E293B' : '#FFFFFF',
-                    borderColor: theme === 'dark' ? '#334155' : '#E2E8F0',
-                    color: theme === 'dark' ? '#F1F5F9' : '#64748B'
-                  }}
-                >
-                  {copiedAll ? (
-                    <>
-                      <Check size={16} className="mr-2 text-emerald-500" />
-                      Copied Data!
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} className="mr-2" />
-                      Copy all data
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  onClick={handleSaveToDatabase}
-                  disabled={saving}
-                  className="h-11 px-6 rounded-xl text-white font-medium shadow-sm w-full sm:w-auto transition-all hover:opacity-95 cursor-pointer"
-                  style={{
-                    background: saved ? "#15803D" : "#10B981",
-                  }}
-                >
-                  {saving ? (
-                    "Syncing Records..."
-                  ) : saved ? (
-                    <>
-                      <Check size={16} className="mr-2" />
-                      Saved Successfully
-                    </>
-                  ) : (
-                    "Save To Database"
-                  )}
-                </Button>
               </div>
             </div>
           </div>

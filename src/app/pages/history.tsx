@@ -5,7 +5,8 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { useTheme } from '../context/ThemeContext';
-import { File, Search, Calendar, User, Eye, Hash } from 'lucide-react';
+import { toast } from 'sonner';
+import { File, Search, Calendar, User, Eye, Hash, Trash2 } from 'lucide-react';
 
 interface UploadRecord {
   id: number;
@@ -22,8 +23,8 @@ export function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const { theme } = useTheme();
 
-  // Updated mock data according to your requested schema
-  const allUploads: UploadRecord[] = [
+  // Updated mock data according to your requested schema as a React State
+  const [uploads, setUploads] = useState<UploadRecord[]>([
     {
       id: 1,
       fileName: 'patient_form_01.pdf',
@@ -96,10 +97,15 @@ export function HistoryPage() {
       date: '22 May 2026',
       status: 'Done',
     },
-  ];
+  ]);
+
+  const handleDeleteRecord = (id: number, testId: string) => {
+    setUploads((prev) => prev.filter((upload) => upload.id !== id));
+    toast.warning(`Deleted history record ${testId} successfully`);
+  };
 
   // Filter uploads based on new schema search queries
-  const filteredUploads = allUploads.filter(
+  const filteredUploads = uploads.filter(
     (upload) =>
       upload.fileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       upload.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,7 +210,7 @@ export function HistoryPage() {
                   color: theme === 'dark' ? '#F1F5F9' : '#0F172A',
                 }}
               >
-                {allUploads.length}
+                {uploads.length}
               </div>
               <div
                 className="transition-colors"
@@ -248,7 +254,7 @@ export function HistoryPage() {
                   color: theme === 'dark' ? '#F1F5F9' : '#0F172A',
                 }}
               >
-                {allUploads.length}
+                {uploads.length}
               </div>
               <div
                 className="transition-colors"
@@ -528,7 +534,7 @@ export function HistoryPage() {
                         <Button
                           onClick={() => navigate(`/result/${upload.id}`)}
                           variant="outline"
-                          className="h-9 px-3 rounded-xl flex items-center gap-2 transition-all shadow-none"
+                          className="h-9 px-3 rounded-xl flex items-center gap-2 transition-all shadow-none cursor-pointer"
                           style={{
                             fontSize: '13px',
                             background: theme === 'dark' ? '#10B981' : '#FFFFFF',
@@ -538,6 +544,15 @@ export function HistoryPage() {
                         >
                           <Eye size={14} />
                           View
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteRecord(upload.id, upload.testId)}
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                          title="Delete Record"
+                        >
+                          <Trash2 size={14} />
                         </Button>
                       </div>
                     </td>
