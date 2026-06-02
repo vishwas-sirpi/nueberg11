@@ -2,6 +2,7 @@
 
 import { useTheme } from "../../context/ThemeContext";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import "sonner/dist/styles.css";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme } = useTheme();
