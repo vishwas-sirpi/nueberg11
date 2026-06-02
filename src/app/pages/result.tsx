@@ -9,6 +9,8 @@ import {
   Copy,
   Check,
   Download,
+  Pencil,
+  Save,
 } from "lucide-react";
 
 export function ResultPage() {
@@ -18,6 +20,14 @@ export function ResultPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+
+  const handleToggleEdit = (key: string) => {
+    setEditingFields((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   // Simulated file metadata (In production, fetch this via id)
   const fileMeta = {
@@ -197,30 +207,57 @@ export function ResultPage() {
 
                       <input
                         value={value}
+                        readOnly={!editingFields[key]}
                         onChange={(e) => handleFieldChange(key, e.target.value)}
-                        className="w-full outline-none bg-transparent"
+                        className={`w-full outline-none bg-transparent transition-all border-b ${
+                          editingFields[key]
+                            ? "border-slate-300 dark:border-slate-600 pb-0.5 text-slate-900"
+                            : "border-transparent text-slate-700 pointer-events-none"
+                        }`}
                         style={{
                           fontSize: "14px",
                           fontWeight: "500",
-                          color: "#0F172A",
                         }}
                       />
                     </div>
 
-                    <button
-                      onClick={() => handleCopyField(key, value)}
-                      className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all"
-                      style={{
-                        background: copiedField === key ? "#F0FDF4" : "#FFFFFF",
-                        borderColor: copiedField === key ? "#BBF7D0" : "#E2E8F0",
-                      }}
-                    >
-                      {copiedField === key ? (
-                        <Check size={14} color="#166534" />
-                      ) : (
-                        <Copy size={14} className="text-slate-400 hover:text-slate-600" />
-                      )}
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Copy Button */}
+                      <button
+                        onClick={() => handleCopyField(key, value)}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer"
+                        style={{
+                          background: copiedField === key ? "#F0FDF4" : "#FFFFFF",
+                          borderColor: copiedField === key ? "#BBF7D0" : "#E2E8F0",
+                        }}
+                        title="Copy value"
+                        aria-label="Copy value"
+                      >
+                        {copiedField === key ? (
+                          <Check size={14} color="#166534" />
+                        ) : (
+                          <Copy size={14} className="text-slate-400 hover:text-slate-600" />
+                        )}
+                      </button>
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => handleToggleEdit(key)}
+                        className="w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer"
+                        style={{
+                          background: editingFields[key] ? "#EFF6FF" : "#FFFFFF",
+                          borderColor: editingFields[key] ? "#BFDBFE" : "#E2E8F0",
+                        }}
+                        title={editingFields[key] ? "Save changes" : "Edit field"}
+                        aria-label={editingFields[key] ? "Save changes" : "Edit field"}
+                      >
+                        {editingFields[key] ? (
+                          <Save size={14} className="text-blue-600" />
+                        ) : (
+                          <Pencil size={14} className="text-slate-400 hover:text-slate-600" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
